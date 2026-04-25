@@ -8,6 +8,7 @@ import { composeTree } from '../factories/treeFactory';
 import { composeSpell } from '../factories/spellFactory';
 import { playCreationSound, playClapBurst } from '../audio/audioEngine';
 import { playSpell } from '../audio/spellSounds';
+import { useSceneStore } from '../store/sceneStore';
 
 const WORLD_WIDTH = 8;
 const WORLD_HEIGHT = 4.5;
@@ -353,6 +354,8 @@ function handleClap(modeIdxRef: React.MutableRefObject<number>, shells: Map<numb
   for (const shell of shells.values()) {
     shell.entity.mode = newMode;
   }
+  // PostFX 모드도 동시 셔플 — 화면 전체 분위기 변화
+  useSceneStore.getState().cyclePostFxMode();
   for (const c of [...queries.creations]) {
     if (typeof c.scale === 'number') c.scale *= 1.15;
     if (c.velocity) {

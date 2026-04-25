@@ -7,6 +7,8 @@ import { Creations } from './Creations';
 import { Trees } from './Trees';
 import { FlowGlimpse } from './FlowGlimpse';
 import { Spells } from './Spells';
+import { PlasmaSphere } from './PlasmaSphere';
+import { VoronoiBackground } from './VoronoiBackground';
 import { PostFX } from './PostFX';
 import { CreationLifecycle } from '../world/systems/creationLifecycleSystem';
 import { LSystemLifecycle } from '../world/systems/lsystemSystem';
@@ -28,10 +30,12 @@ export function Scene() {
       <pointLight position={[0, 0, 3]} intensity={0.4} color="#ff8866" />
 
       <WebcamPlane />
+      <VoronoiBackground />
       <FolderOrb />
       <Particles />
       <PersonSkeletons />
       <Creations />
+      <PlasmaSphere />
       <Trees />
       <FlowGlimpse />
       <Spells />

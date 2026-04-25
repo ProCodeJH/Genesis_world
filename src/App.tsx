@@ -4,6 +4,7 @@ import { useFolderStore } from './store/folderStore';
 import { useTrackers } from './tracking/useTrackers';
 import { composeCreation } from './factories/randomComposer';
 import { world } from './world/ecs';
+import { useSceneStore } from './store/sceneStore';
 
 const DEFAULT_FOLDER = 'C:/Users/exodia/.local/bin/Nava';
 
@@ -24,6 +25,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
 
   const { ready: trackersReady, error: trackerError } = useTrackers(tracking);
+  const postFxMode = useSceneStore((s) => s.postFxMode);
 
   const totalSize = useFolderStore((s) => s.totalSize);
   const fileCount = useFolderStore((s) => s.fileCount);
@@ -83,8 +85,11 @@ export default function App() {
     <div style={rootStyle}>
       <Scene />
       <div style={hudStyle}>
-        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.5</span></div>
-        <div style={hintStyle}>v0.5 Spells — 애니 마법 임팩트 (Rasengan/Kamehameha/Bankai/Amaterasu)</div>
+        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.6</span></div>
+        <div style={hintStyle}>
+          v0.6 Demoscene — Plasma + Voronoi + 4 PostFX 모드<br />
+          <span style={{ color: '#66e0ff' }}>FX: {postFxMode}</span>
+        </div>
 
         <div style={sectionLabel}>📂 폴더</div>
         <input

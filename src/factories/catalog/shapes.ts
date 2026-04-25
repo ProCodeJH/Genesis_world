@@ -20,7 +20,8 @@ export type ShapeKind =
   | 'crystal'
   | 'spike'
   | 'cluster'
-  | 'blade';
+  | 'blade'
+  | 'plasma';
 
 export interface ShapeDef {
   kind: ShapeKind;
@@ -43,6 +44,7 @@ export const SHAPES: ShapeDef[] = [
   { kind: 'spike', weight: 1 },
   { kind: 'cluster', weight: 1.2 },
   { kind: 'blade', weight: 0.8 },
+  { kind: 'plasma', weight: 1.8 },
 ];
 
 export function pickShape(rand: () => number): ShapeKind {
