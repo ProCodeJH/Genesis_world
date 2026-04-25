@@ -19,6 +19,7 @@ import { SpellSystem } from '../world/systems/spellSystem';
 import { ComboSystem } from '../world/systems/comboSystem';
 import { InfluenceSystem } from '../world/systems/influenceSystem';
 import { PersistenceSystem } from '../world/systems/persistenceSystem';
+import { PhysicsSystem } from '../world/systems/physicsSystem';
 import { HandTrails } from './HandTrails';
 import { Constellation } from './Constellation';
 import { SequencerVisual } from './SequencerVisual';
@@ -57,6 +58,7 @@ export function Scene() {
       <SpellSystem />
       <ComboSystem />
       <InfluenceSystem />
+      <PhysicsSystem />
       <PersistenceSystem />
       <PostFX />
     </Canvas>

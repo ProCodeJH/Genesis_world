@@ -114,9 +114,9 @@ export default function App() {
     <div style={rootStyle}>
       <Scene />
       <div style={hudStyle}>
-        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v1.1</span></div>
+        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v1.2</span></div>
         <div style={hintStyle}>
-          v1.1 Sound Sequencer — 자세가 음악이 된다<br />
+          v1.2 Physics — 잡고 던지고 떨어진다<br />
           <span style={{ color: '#66e0ff' }}>FX: {postFxMode}</span>
           {restoredCount > 0 && (
             <>
@@ -194,7 +194,11 @@ export default function App() {
             ✊✊ 양손 주먹 가깝게 → ⚡ Lightning Bolt<br /><br />
             <b>협업 (두 사람)</b><br />
             🤝 두 사람 손목 닿음 → 🎆 High Five<br />
-            🌀+🌀 두 사람 Rasengan 동시 → 🌌 Combo Sphere
+            🌀+🌀 두 사람 Rasengan 동시 → 🌌 Combo Sphere<br /><br />
+            <b>물리 (v1.2)</b><br />
+            👌 가까운 거 핀치 → ✊ 잡기<br />
+            👋 핀치 풀기 → 던지기 (속도 보존)<br />
+            🌍 물리 모드 entity는 떨어지고 튕김
           </div>
         )}
 

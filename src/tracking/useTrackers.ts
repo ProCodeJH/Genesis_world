@@ -199,31 +199,39 @@ function tick(
       shell.entity.hands!.push(handObj);
 
       if (pinch && !wasPinching && handObj.pinchPosition) {
-        // 시퀀서 ON이면 박자에 음표 추가 (즉발 음과 시각 둘 다 함께 일어남)
+        // 시퀀서 ON이면 박자에 음표 추가
         const seqStore = useSequencerStore.getState();
         if (seqStore.isPlaying) {
           const wrist = handLms[0];
-          const step = stepFromX(1 - wrist.x); // 거울 모드 보정
+          const step = stepFromX(1 - wrist.x);
           const pitch = pitchFromY(wrist.y);
           seqStore.addNote(step, { pitch, personId: ownerId, instrument: pickInstrument(ownerId) });
         }
 
-        // 다른 손이 fist면 Chidori, 아니면 일반 creation
-        const otherHand = shell.entity.hands?.find((h) => h.handedness !== handedness);
-        if (otherHand?.isFist && Date.now() - shell.lastChidoriAt > 2000) {
-          shell.lastChidoriAt = Date.now();
-          world.add(composeSpell({ kind: 'chidori', origin: handObj.pinchPosition, personId: ownerId }));
-          void playSpell('chidori');
+        // 잡기 시도: 0.35 반경 내 가까운 creation
+        const grabRadius = 0.35;
+        let nearest: ReturnType<typeof findNearestGrabbable> = null;
+        nearest = findNearestGrabbable(handObj.pinchPosition, grabRadius);
+        if (nearest) {
+          nearest.grabbed = { personId: ownerId, handedness };
         } else {
-          const creation = composeCreation({
-            position: handObj.pinchPosition,
-            personId: ownerId,
-            face: shell.entity.face,
-            origin: 'hand',
-          });
-          world.add(creation);
-          if (creation.palette && creation.seed != null) {
-            void playCreationSound(creation.palette, creation.seed);
+          // 가까운 게 없으면 평소처럼 spell or creation
+          const otherHand = shell.entity.hands?.find((h) => h.handedness !== handedness);
+          if (otherHand?.isFist && Date.now() - shell.lastChidoriAt > 2000) {
+            shell.lastChidoriAt = Date.now();
+            world.add(composeSpell({ kind: 'chidori', origin: handObj.pinchPosition, personId: ownerId }));
+            void playSpell('chidori');
+          } else {
+            const creation = composeCreation({
+              position: handObj.pinchPosition,
+              personId: ownerId,
+              face: shell.entity.face,
+              origin: 'hand',
+            });
+            world.add(creation);
+            if (creation.palette && creation.seed != null) {
+              void playCreationSound(creation.palette, creation.seed);
+            }
           }
         }
       }
@@ -465,3 +473,21 @@ function handleClap(modeIdxRef: React.MutableRefObject<number>, shells: Map<numb
 }
 
 export type { FaceState };
+
+/** 핀치 위치에서 가장 가까운 grabbable creation 반환 */
+function findNearestGrabbable(
+  pos: [number, number, number],
+  radius: number,
+): Entity | null {
+  let best: Entity | null = null;
+  let bestDist = Infinity;
+  for (const c of [...queries.creations]) {
+    if (!c.position || c.grabbed) continue;
+    const dx = c.position[0] - pos[0];
+    const dy = c.position[1] - pos[1];
+    const dz = c.position[2] - pos[2];
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (d < radius && d < bestDist) { bestDist = d; best = c; }
+  }
+  return best;
+}

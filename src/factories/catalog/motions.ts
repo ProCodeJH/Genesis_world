@@ -17,7 +17,8 @@ export type MotionKind =
   | 'dance'    // XYZ 사인 합성
   | 'wobble'   // 불안정 흔들림
   | 'burst'    // 폭발 후 정지
-  | 'anchor';  // 한 자리 고정 (회전만)
+  | 'anchor'   // 한 자리 고정 (회전만)
+  | 'physics'; // 중력 + 충돌 + 잡기 가능
 
 export interface MotionDef {
   kind: MotionKind;
@@ -37,6 +38,7 @@ export const MOTIONS: MotionDef[] = [
   { kind: 'wobble', weight: 1 },
   { kind: 'burst', weight: 1 },
   { kind: 'anchor', weight: 0.8 },
+  { kind: 'physics', weight: 2.0 },
 ];
 
 export function pickMotion(rand: () => number): MotionKind {

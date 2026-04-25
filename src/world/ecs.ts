@@ -63,6 +63,8 @@ export interface Entity {
   origin?: 'hand' | 'folder';
   /** boids에서 생산자 식별 (분리/응집 그룹 분할용) */
   flockGroupId?: number;
+  /** 잡힌 상태 (Physics) — 손이 따라옴 */
+  grabbed?: { personId: number; handedness: 'Left' | 'Right' };
 
   // tree
   branches?: TreeBranch[];

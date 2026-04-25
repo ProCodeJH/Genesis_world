@@ -91,9 +91,12 @@ export function CreationLifecycle() {
           break;
         }
         case 'anchor': {
-          // 위치 고정, 회전만
           c.velocity[0] = 0; c.velocity[1] = 0; c.velocity[2] = 0;
           c.spin[0] += dt * 0.3;
+          break;
+        }
+        case 'physics': {
+          // physicsSystem이 중력/bounce 처리. 여기선 회전만.
           break;
         }
       }
