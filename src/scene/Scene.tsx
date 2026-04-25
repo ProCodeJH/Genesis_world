@@ -6,11 +6,13 @@ import { PersonSkeletons } from './PersonSkeletons';
 import { Creations } from './Creations';
 import { Trees } from './Trees';
 import { FlowGlimpse } from './FlowGlimpse';
+import { Spells } from './Spells';
 import { PostFX } from './PostFX';
 import { CreationLifecycle } from '../world/systems/creationLifecycleSystem';
 import { LSystemLifecycle } from '../world/systems/lsystemSystem';
 import { BoidsSystem } from '../world/systems/boidsSystem';
 import { FlowFieldSystem } from '../world/systems/flowFieldSystem';
+import { SpellSystem } from '../world/systems/spellSystem';
 
 export function Scene() {
   return (
@@ -32,10 +34,12 @@ export function Scene() {
       <Creations />
       <Trees />
       <FlowGlimpse />
+      <Spells />
       <CreationLifecycle />
       <LSystemLifecycle />
       <BoidsSystem />
       <FlowFieldSystem />
+      <SpellSystem />
       <PostFX />
     </Canvas>
   );

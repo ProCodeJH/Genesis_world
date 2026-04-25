@@ -7,6 +7,7 @@ import type { BirthKind } from '../factories/catalog/births';
 import type { DeathKind } from '../factories/catalog/deaths';
 import type { FaceState } from '../tracking/FaceTracker';
 import type { TreeBranch } from '../factories/treeFactory';
+import type { SpellKind } from '../factories/catalog/spells';
 
 export interface PoseLandmark { x: number; y: number; z: number; visibility: number }
 export interface HandLandmark { x: number; y: number; z: number }
@@ -30,7 +31,7 @@ export type PersonMode = 'skeleton' | 'particles' | 'dual';
 
 export interface Entity {
   id: string;
-  kind: 'person' | 'creation' | 'orb' | 'effect' | 'tree';
+  kind: 'person' | 'creation' | 'orb' | 'effect' | 'tree' | 'spell';
 
   // person
   personId?: number;
@@ -67,6 +68,12 @@ export interface Entity {
   branches?: TreeBranch[];
   growDuration?: number;
   rule?: string;
+
+  // spell
+  spellKind?: SpellKind;
+  spellOrigin?: [number, number, number];
+  spellTarget?: [number, number, number];
+  spellIntensity?: number;
 }
 
 export const world = new World<Entity>();
@@ -76,4 +83,5 @@ export const queries = {
   persons: world.with('kind', 'pose').where((e) => e.kind === 'person'),
   creations: world.with('kind', 'shape', 'position').where((e) => e.kind === 'creation'),
   trees: world.with('kind', 'branches').where((e) => e.kind === 'tree'),
+  spells: world.with('kind', 'spellKind').where((e) => e.kind === 'spell'),
 };

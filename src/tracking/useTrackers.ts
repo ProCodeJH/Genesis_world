@@ -5,7 +5,9 @@ import { FaceTracker, readFaceState, type FaceState } from './FaceTracker';
 import { world, queries, type Entity, type Hand, type PersonMode } from '../world/ecs';
 import { composeCreation } from '../factories/randomComposer';
 import { composeTree } from '../factories/treeFactory';
+import { composeSpell } from '../factories/spellFactory';
 import { playCreationSound, playClapBurst } from '../audio/audioEngine';
+import { playSpell } from '../audio/spellSounds';
 
 const WORLD_WIDTH = 8;
 const WORLD_HEIGHT = 4.5;
@@ -41,6 +43,9 @@ interface PersonShell {
   lastClapAt: number;
   lastTreeAt: number;
   treeCount: number;
+  lastSphereAt: number;
+  lastBeamAt: number;
+  lastPillarAt: number;
 }
 
 const PERSON_MODES: PersonMode[] = ['skeleton', 'particles', 'dual'];
@@ -139,7 +144,7 @@ function tick(
         mode: currentMode,
       };
       world.add(ent);
-      shell = { id: ent.id, entity: ent, prevPinch: {}, prevFist: {}, lastClapAt: 0, lastTreeAt: 0, treeCount: 0 };
+      shell = { id: ent.id, entity: ent, prevPinch: {}, prevFist: {}, lastClapAt: 0, lastTreeAt: 0, treeCount: 0, lastSphereAt: 0, lastBeamAt: 0, lastPillarAt: 0 };
       shells.set(i, shell);
     }
     shell.entity.pose = {
@@ -217,7 +222,7 @@ function tick(
       }
       shell.prevFist[fistKey] = fist;
 
-      // 박수 — 양손 손목 가까움 + 쿨다운 600ms → 모드 셔플
+      // 박수 — 양손 손목 가까움 + 쿨다운 600ms → 모드 셔플 + Snap spell
       if (handedness === 'Right' && shell.entity.hands && shell.entity.hands.length >= 2) {
         const left = shell.entity.hands.find((h) => h.handedness === 'Left');
         if (left) {
@@ -229,8 +234,74 @@ function tick(
           if (dist < 0.08 && Date.now() - shell.lastClapAt > 600) {
             shell.lastClapAt = Date.now();
             handleClap(modeIdxRef, shells);
+            // 박수 위치에 Snap spell
+            const snapPos: [number, number, number] = [
+              -(((lw.x + rw.x) / 2 - 0.5) * WORLD_WIDTH),
+              -(((lw.y + rw.y) / 2 - 0.5) * WORLD_HEIGHT),
+              -((lw.z + rw.z) / 2) * 4,
+            ];
+            world.add(composeSpell({ kind: 'snap', origin: snapPos, personId: ownerId }));
+            void playSpell('snap');
           }
         }
+      }
+    }
+  }
+
+  // Spell 제스처 감지 — 사람마다
+  for (const [ownerId, shell] of shells) {
+    const hands = shell.entity.hands ?? [];
+    if (hands.length < 2) continue;
+    const lh = hands.find((h) => h.handedness === 'Left');
+    const rh = hands.find((h) => h.handedness === 'Right');
+    if (!lh || !rh) continue;
+    const lw = lh.landmarks[0];
+    const rw = rh.landmarks[0];
+    const dx = lw.x - rw.x, dy = lw.y - rw.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const now = Date.now();
+
+    // Sphere (Rasengan): 양손 펴짐 + 가까움 + 핀치 아님
+    if (lh.isOpen && rh.isOpen && !lh.isPinching && !rh.isPinching && dist < 0.18 && now - shell.lastSphereAt > 2500) {
+      shell.lastSphereAt = now;
+      const mid: [number, number, number] = [
+        -(((lw.x + rw.x) / 2 - 0.5) * WORLD_WIDTH),
+        -(((lw.y + rw.y) / 2 - 0.5) * WORLD_HEIGHT),
+        -((lw.z + rw.z) / 2) * 4,
+      ];
+      world.add(composeSpell({ kind: 'sphere', origin: mid, personId: ownerId }));
+      void playSpell('sphere');
+    }
+
+    // Beam (Kamehameha): 양손 펴짐 + 같은 높이 + 적당 거리
+    if (lh.isOpen && rh.isOpen && Math.abs(dy) < 0.08 && dist > 0.25 && dist < 0.55 && now - shell.lastBeamAt > 3000) {
+      shell.lastBeamAt = now;
+      const mid: [number, number, number] = [
+        -(((lw.x + rw.x) / 2 - 0.5) * WORLD_WIDTH),
+        -(((lw.y + rw.y) / 2 - 0.5) * WORLD_HEIGHT),
+        -((lw.z + rw.z) / 2) * 4,
+      ];
+      const target: [number, number, number] = [mid[0], mid[1], mid[2] - 5];
+      world.add(composeSpell({ kind: 'beam', origin: mid, target, personId: ownerId }));
+      void playSpell('beam');
+    }
+
+    // Pillar (Bankai): 한 손 펴짐 + 어깨보다 위
+    const poseLms = shell.entity.pose?.landmarks as { y: number }[] | undefined;
+    for (const h of hands) {
+      if (!h.isOpen || !poseLms) continue;
+      const wrist = h.landmarks[0];
+      const shoulder = h.handedness === 'Left' ? poseLms[11] : poseLms[12];
+      if (shoulder && wrist.y < shoulder.y - 0.18 && now - shell.lastPillarAt > 2500) {
+        shell.lastPillarAt = now;
+        const wpos: [number, number, number] = [
+          -((wrist.x - 0.5) * WORLD_WIDTH),
+          -(wrist.y - 0.5) * WORLD_HEIGHT,
+          -wrist.z * 4,
+        ];
+        world.add(composeSpell({ kind: 'pillar', origin: wpos, personId: ownerId }));
+        void playSpell('pillar');
+        break;
       }
     }
   }

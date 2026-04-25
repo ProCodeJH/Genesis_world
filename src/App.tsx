@@ -83,8 +83,8 @@ export default function App() {
     <div style={rootStyle}>
       <Scene />
       <div style={hudStyle}>
-        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.4</span></div>
-        <div style={hintStyle}>v0.4 Procedural — L-System 나무 + Boids + Perlin Flow Field</div>
+        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.5</span></div>
+        <div style={hintStyle}>v0.5 Spells — 애니 마법 임팩트 (Rasengan/Kamehameha/Bankai/Amaterasu)</div>
 
         <div style={sectionLabel}>📂 폴더</div>
         <input
@@ -112,12 +112,16 @@ export default function App() {
         {trackerError && <div style={errorStyle}>⚠ tracker: {trackerError}</div>}
         {tracking && trackersReady && (
           <div style={hintStyle}>
+            <b>기본</b><br />
             👌 핀치 → 무언가 태어남<br />
-            ✊ 주먹 → 그 자리에 나무 자라기 (max 3그루)<br />
+            ✊ 주먹 → 나무 자라기 (max 3그루)<br />
             😮 입 벌리고 핀치 → 큰 창조물<br />
-            😊 미소 → 따뜻한 색조<br />
-            😲 놀람 → 사이버 색조<br />
-            👏 박수 → 표현 모드 셔플
+            😊 미소 → 따뜻 / 😲 놀람 → 사이버<br /><br />
+            <b>마법 (양손)</b><br />
+            🤲 양손 펴고 가깝게 → 🌀 Rasengan<br />
+            👐 양손 펴고 같은 높이 → 💥 Kamehameha<br />
+            ☝️ 한 손 펴고 어깨 위 → ⚡ Bankai<br />
+            👏 박수 → 🔥 Amaterasu + 모드 셔플
           </div>
         )}
 
