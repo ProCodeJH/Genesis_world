@@ -6,6 +6,7 @@ import { composeCreation } from './factories/randomComposer';
 import { world } from './world/ecs';
 import { useSceneStore } from './store/sceneStore';
 import { loadSnapshot, restoreEntities, clearSnapshot } from './world/persistence';
+import { useSequencerStore, initSequencer } from './audio/sequencer';
 
 const DEFAULT_FOLDER = 'C:/Users/exodia/.local/bin/Nava';
 
@@ -42,6 +43,17 @@ export default function App() {
   const clearTraces = useCallback(() => {
     clearSnapshot();
     setRestoredCount(0);
+  }, []);
+
+  const seqPlaying = useSequencerStore((s) => s.isPlaying);
+  const seqBpm = useSequencerStore((s) => s.bpm);
+  const seqToggle = useSequencerStore((s) => s.toggle);
+  const seqClear = useSequencerStore((s) => s.clearAll);
+  const seqSetBpm = useSequencerStore((s) => s.setBpm);
+
+  // 시퀀서 첫 로드 (사용자 제스처 후 토글 시 실제 start)
+  useEffect(() => {
+    initSequencer().catch(() => { /* AudioContext 미지원 무시 */ });
   }, []);
 
   const totalSize = useFolderStore((s) => s.totalSize);
@@ -102,9 +114,9 @@ export default function App() {
     <div style={rootStyle}>
       <Scene />
       <div style={hudStyle}>
-        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v1.0</span></div>
+        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v1.1</span></div>
         <div style={hintStyle}>
-          v1.0 Persistence — 어제 만든 빛이 오늘도 떠있다<br />
+          v1.1 Sound Sequencer — 자세가 음악이 된다<br />
           <span style={{ color: '#66e0ff' }}>FX: {postFxMode}</span>
           {restoredCount > 0 && (
             <>
@@ -114,6 +126,29 @@ export default function App() {
             </>
           )}
         </div>
+
+        <div style={sectionLabel}>🎵 음악 시퀀서</div>
+        <div style={btnRow}>
+          <button onClick={() => { void seqToggle(); }} style={seqPlaying ? btnStop : btnPrimary}>
+            {seqPlaying ? '⏸ 정지' : '▶ 시작'}
+          </button>
+          <button onClick={seqClear} style={{ ...btnPrimary, opacity: 0.7 }}>지우기</button>
+          <span style={{ alignSelf: 'center', fontSize: 10, opacity: 0.7 }}>BPM {seqBpm}</span>
+        </div>
+        <div style={btnRow}>
+          <input
+            type="range" min={60} max={180} value={seqBpm}
+            onChange={(e) => seqSetBpm(Number(e.target.value))}
+            style={{ width: '100%' }}
+          />
+        </div>
+        {seqPlaying && (
+          <div style={hintStyle}>
+            🎵 시퀀서 ON — 핀치 시 박자에 음표 추가<br />
+            손목 X → 8 step 중 위치 / 손목 Y → 음 높이 (펜타토닉)<br />
+            사람마다 음색: synth/pluck/bell/marimba
+          </div>
+        )}
 
         <div style={sectionLabel}>📂 폴더</div>
         <input

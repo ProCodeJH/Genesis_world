@@ -21,6 +21,7 @@ import { InfluenceSystem } from '../world/systems/influenceSystem';
 import { PersistenceSystem } from '../world/systems/persistenceSystem';
 import { HandTrails } from './HandTrails';
 import { Constellation } from './Constellation';
+import { SequencerVisual } from './SequencerVisual';
 
 export function Scene() {
   return (
@@ -47,6 +48,7 @@ export function Scene() {
       <ReactionDiffusionPlane />
       <Constellation />
       <HandTrails />
+      <SequencerVisual />
       <Spells />
       <CreationLifecycle />
       <LSystemLifecycle />

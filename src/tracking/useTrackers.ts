@@ -9,6 +9,7 @@ import { composeSpell } from '../factories/spellFactory';
 import { playCreationSound, playClapBurst } from '../audio/audioEngine';
 import { playSpell } from '../audio/spellSounds';
 import { useSceneStore } from '../store/sceneStore';
+import { useSequencerStore, pickInstrument, pitchFromY, stepFromX } from '../audio/sequencer';
 
 const WORLD_WIDTH = 8;
 const WORLD_HEIGHT = 4.5;
@@ -198,6 +199,15 @@ function tick(
       shell.entity.hands!.push(handObj);
 
       if (pinch && !wasPinching && handObj.pinchPosition) {
+        // 시퀀서 ON이면 박자에 음표 추가 (즉발 음과 시각 둘 다 함께 일어남)
+        const seqStore = useSequencerStore.getState();
+        if (seqStore.isPlaying) {
+          const wrist = handLms[0];
+          const step = stepFromX(1 - wrist.x); // 거울 모드 보정
+          const pitch = pitchFromY(wrist.y);
+          seqStore.addNote(step, { pitch, personId: ownerId, instrument: pickInstrument(ownerId) });
+        }
+
         // 다른 손이 fist면 Chidori, 아니면 일반 creation
         const otherHand = shell.entity.hands?.find((h) => h.handedness !== handedness);
         if (otherHand?.isFist && Date.now() - shell.lastChidoriAt > 2000) {
