@@ -1,0 +1,44 @@
+{
+  "name": "nava-atelier",
+  "version": "0.2.0",
+  "description": "창조의 세계 — 웹캠 앞 누구든 손짓 하나로 매번 다른 세계를 만든다",
+  "main": "out/main/index.cjs",
+  "author": "자현 & 나바",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "simple-git": "^3.25.0"
+  },
+  "devDependencies": {
+    "@mediapipe/tasks-vision": "^0.10.18",
+    "@react-three/drei": "^9.114.0",
+    "@react-three/fiber": "^8.17.10",
+    "@react-three/postprocessing": "^2.16.5",
+    "@types/chroma-js": "^2.4.5",
+    "@types/node": "^22.7.4",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "@types/seedrandom": "^3.0.8",
+    "@types/three": "^0.169.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "chroma-js": "^3.1.1",
+    "electron": "^32.1.2",
+    "electron-vite": "^2.3.0",
+    "miniplex": "^2.0.0",
+    "miniplex-react": "^2.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "seedrandom": "^3.0.5",
+    "simplex-noise": "^4.0.3",
+    "three": "^0.169.0",
+    "tone": "^15.0.4",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8",
+    "zustand": "^5.0.0"
+  }
+}
