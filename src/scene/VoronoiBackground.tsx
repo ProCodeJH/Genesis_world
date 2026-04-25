@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useSceneStore, SKY_PROFILES } from '../store/sceneStore';
 
 /**
  * Voronoi (Worley noise 1996) 셰이더 — 잎맥/세포/갈라진 땅 패턴.
@@ -18,6 +19,7 @@ void main() {
 const FRAG = /* glsl */`
 uniform float uTime;
 uniform float uAspect;
+uniform vec3 uTint;
 varying vec2 vUv;
 
 vec2 hash22(vec2 p) {
@@ -48,9 +50,9 @@ void main() {
   float d = voronoi(uv);
   // 셀 가장자리 강조 (edge enhancement)
   float edge = smoothstep(0.0, 0.05, d) * (1.0 - smoothstep(0.05, 0.15, d));
-  vec3 col = vec3(0.15, 0.45, 0.65) * edge * 0.7;
-  // 셀 내부 옅은 그라디언트
-  col += vec3(0.05, 0.08, 0.15) * (1.0 - d);
+  vec3 col = uTint * edge * 0.7;
+  // 셀 내부 옅은 그라디언트 (tint의 1/3 어두운 색)
+  col += uTint * 0.2 * (1.0 - d);
   gl_FragColor = vec4(col, 0.18); // 매우 옅음
 }
 `;
@@ -68,12 +70,15 @@ export function VoronoiBackground() {
       uniforms: {
         uTime: { value: 0 },
         uAspect: { value: 1 },
+        uTint: { value: new THREE.Vector3(0.4, 0.7, 1.0) },
       },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
   }, []);
+
+  const targetTint = useMemo(() => new THREE.Vector3(0.4, 0.7, 1.0), []);
 
   useFrame((_, dt) => {
     material.uniforms.uTime.value += dt;
@@ -85,6 +90,12 @@ export function VoronoiBackground() {
     const width = height * aspect;
     meshRef.current.scale.set(width, height, 1);
     material.uniforms.uAspect.value = aspect;
+
+    // skyMode 색을 lerp
+    const skyMode = useSceneStore.getState().skyMode;
+    const t = SKY_PROFILES[skyMode].voronoiColor;
+    targetTint.set(t[0], t[1], t[2]);
+    (material.uniforms.uTint.value as THREE.Vector3).lerp(targetTint, Math.min(1, dt * 1.5));
   });
 
   return (

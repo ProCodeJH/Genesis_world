@@ -23,6 +23,7 @@ import { PhysicsSystem } from '../world/systems/physicsSystem';
 import { HandTrails } from './HandTrails';
 import { Constellation } from './Constellation';
 import { SequencerVisual } from './SequencerVisual';
+import { SkyEnvironment } from './SkyEnvironment';
 
 export function Scene() {
   return (
@@ -31,8 +32,7 @@ export function Scene() {
       gl={{ alpha: false, antialias: true, powerPreference: 'high-performance' }}
       dpr={[1, 2]}
     >
-      <color attach="background" args={['#000']} />
-      <ambientLight intensity={0.3} />
+      <SkyEnvironment />
       <pointLight position={[5, 5, 5]} intensity={1.4} color="#ffffff" />
       <pointLight position={[-5, -3, 3]} intensity={0.6} color="#66e0ff" />
       <pointLight position={[0, 0, 3]} intensity={0.4} color="#ff8866" />

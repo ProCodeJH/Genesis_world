@@ -51,6 +51,9 @@ export default function App() {
   const seqClear = useSequencerStore((s) => s.clearAll);
   const seqSetBpm = useSequencerStore((s) => s.setBpm);
 
+  const skyMode = useSceneStore((s) => s.skyMode);
+  const cycleSkyMode = useSceneStore((s) => s.cycleSkyMode);
+
   // 시퀀서 첫 로드 (사용자 제스처 후 토글 시 실제 start)
   useEffect(() => {
     initSequencer().catch(() => { /* AudioContext 미지원 무시 */ });
@@ -114,10 +117,13 @@ export default function App() {
     <div style={rootStyle}>
       <Scene />
       <div style={hudStyle}>
-        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v1.2</span></div>
+        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v1.3</span></div>
         <div style={hintStyle}>
-          v1.2 Physics — 잡고 던지고 떨어진다<br />
-          <span style={{ color: '#66e0ff' }}>FX: {postFxMode}</span>
+          v1.3 Sky System — 시간대가 분위기를 만든다<br />
+          <span style={{ color: '#66e0ff' }}>FX: {postFxMode}</span>{' '}
+          <span style={{ color: '#ffd86b', cursor: 'pointer' }} onClick={cycleSkyMode}>
+            🌅 {skyMode}
+          </span>
           {restoredCount > 0 && (
             <>
               <br />
@@ -198,7 +204,10 @@ export default function App() {
             <b>물리 (v1.2)</b><br />
             👌 가까운 거 핀치 → ✊ 잡기<br />
             👋 핀치 풀기 → 던지기 (속도 보존)<br />
-            🌍 물리 모드 entity는 떨어지고 튕김
+            🌍 물리 모드 entity는 떨어지고 튕김<br /><br />
+            <b>분위기 (v1.3)</b><br />
+            👏👏 더블 박수 (1.5초 내) → Sky 셔플<br />
+            🌅 dawn / ☀️ day / 🌇 dusk / 🌃 night
           </div>
         )}
 

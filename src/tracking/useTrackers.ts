@@ -265,6 +265,7 @@ function tick(
           const dy = lw.y - rw.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 0.08 && Date.now() - shell.lastClapAt > 600) {
+            const prevClap = shell.lastClapAt;
             shell.lastClapAt = Date.now();
             handleClap(modeIdxRef, shells);
             // 박수 위치에 Snap spell
@@ -275,6 +276,10 @@ function tick(
             ];
             world.add(composeSpell({ kind: 'snap', origin: snapPos, personId: ownerId }));
             void playSpell('snap');
+            // 더블 박수 (이전 박수가 1.5초 안) → Sky 셔플
+            if (Date.now() - prevClap < 1500 && prevClap > 0) {
+              useSceneStore.getState().cycleSkyMode();
+            }
           }
         }
       }
