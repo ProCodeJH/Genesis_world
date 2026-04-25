@@ -4,8 +4,13 @@ import { FolderOrb } from './FolderOrb';
 import { Particles } from './Particles';
 import { PersonSkeletons } from './PersonSkeletons';
 import { Creations } from './Creations';
+import { Trees } from './Trees';
+import { FlowGlimpse } from './FlowGlimpse';
 import { PostFX } from './PostFX';
 import { CreationLifecycle } from '../world/systems/creationLifecycleSystem';
+import { LSystemLifecycle } from '../world/systems/lsystemSystem';
+import { BoidsSystem } from '../world/systems/boidsSystem';
+import { FlowFieldSystem } from '../world/systems/flowFieldSystem';
 
 export function Scene() {
   return (
@@ -25,7 +30,12 @@ export function Scene() {
       <Particles />
       <PersonSkeletons />
       <Creations />
+      <Trees />
+      <FlowGlimpse />
       <CreationLifecycle />
+      <LSystemLifecycle />
+      <BoidsSystem />
+      <FlowFieldSystem />
       <PostFX />
     </Canvas>
   );

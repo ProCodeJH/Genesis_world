@@ -83,8 +83,8 @@ export default function App() {
     <div style={rootStyle}>
       <Scene />
       <div style={hudStyle}>
-        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.3</span></div>
-        <div style={hintStyle}>20 팔레트 × 15 모양 × 12 움직임 × 5 출생 × 5 사망 = 90,000+ 조합</div>
+        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.4</span></div>
+        <div style={hintStyle}>v0.4 Procedural — L-System 나무 + Boids + Perlin Flow Field</div>
 
         <div style={sectionLabel}>📂 폴더</div>
         <input
@@ -113,10 +113,11 @@ export default function App() {
         {tracking && trackersReady && (
           <div style={hintStyle}>
             👌 핀치 → 무언가 태어남<br />
+            ✊ 주먹 → 그 자리에 나무 자라기 (max 3그루)<br />
             😮 입 벌리고 핀치 → 큰 창조물<br />
             😊 미소 → 따뜻한 색조<br />
             😲 놀람 → 사이버 색조<br />
-            👏 박수 → 표현 모드 셔플 (스켈레톤/점/이중)
+            👏 박수 → 표현 모드 셔플
           </div>
         )}
 

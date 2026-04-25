@@ -12,18 +12,6 @@ const noise3D = createNoise3D();
 export function CreationLifecycle() {
   useFrame((_, dt) => {
     const t = performance.now() * 0.001;
-    const flockCenter: [number, number, number] = [0, 0, 0];
-    let flockCount = 0;
-    // flock 중심 사전 계산
-    for (const c of [...queries.creations]) {
-      if (c.motion === 'flock' && c.position) {
-        flockCenter[0] += c.position[0]; flockCenter[1] += c.position[1]; flockCenter[2] += c.position[2];
-        flockCount++;
-      }
-    }
-    if (flockCount > 0) {
-      flockCenter[0] /= flockCount; flockCenter[1] /= flockCount; flockCenter[2] /= flockCount;
-    }
 
     for (const c of [...queries.creations]) {
       if (!c.position || !c.velocity || !c.spin) continue;
@@ -67,20 +55,8 @@ export function CreationLifecycle() {
           break;
         }
         case 'flock': {
-          // Boids: cohesion to center + alignment + 약한 separation
-          if (flockCount > 1) {
-            const dx = flockCenter[0] - c.position[0];
-            const dy = flockCenter[1] - c.position[1];
-            const dz = flockCenter[2] - c.position[2];
-            c.velocity[0] += dx * 0.05 * dt;
-            c.velocity[1] += dy * 0.05 * dt;
-            c.velocity[2] += dz * 0.05 * dt;
-          }
-          // 약간의 무작위 흔들림
-          c.velocity[0] += (Math.random() - 0.5) * 0.4 * dt;
-          c.velocity[1] += (Math.random() - 0.5) * 0.4 * dt;
-          c.velocity[2] += (Math.random() - 0.5) * 0.4 * dt;
-          dampen(c, 0.96);
+          // boidsSystem이 처리. 여기선 약한 항력만.
+          dampen(c, 0.99);
           break;
         }
         case 'fall': {

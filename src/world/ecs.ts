@@ -6,6 +6,7 @@ import type { MotionKind } from '../factories/catalog/motions';
 import type { BirthKind } from '../factories/catalog/births';
 import type { DeathKind } from '../factories/catalog/deaths';
 import type { FaceState } from '../tracking/FaceTracker';
+import type { TreeBranch } from '../factories/treeFactory';
 
 export interface PoseLandmark { x: number; y: number; z: number; visibility: number }
 export interface HandLandmark { x: number; y: number; z: number }
@@ -22,13 +23,14 @@ export interface Hand {
   isOpen: boolean;
   isFist: boolean;
   pinchPosition?: [number, number, number];
+  fistPosition?: [number, number, number];
 }
 
 export type PersonMode = 'skeleton' | 'particles' | 'dual';
 
 export interface Entity {
   id: string;
-  kind: 'person' | 'creation' | 'orb' | 'effect';
+  kind: 'person' | 'creation' | 'orb' | 'effect' | 'tree';
 
   // person
   personId?: number;
@@ -36,6 +38,7 @@ export interface Entity {
   hands?: Hand[];
   face?: FaceState;
   mode?: PersonMode;
+  prevFist?: Record<string, boolean>;
 
   // creation
   position?: [number, number, number];
@@ -56,8 +59,14 @@ export interface Entity {
   birthAt?: number;
   primaryColor?: [number, number, number];
   emissive?: number;
-  /** 폴더 commit으로 생성된 별 등 출처 표시 */
   origin?: 'hand' | 'folder';
+  /** boids에서 생산자 식별 (분리/응집 그룹 분할용) */
+  flockGroupId?: number;
+
+  // tree
+  branches?: TreeBranch[];
+  growDuration?: number;
+  rule?: string;
 }
 
 export const world = new World<Entity>();
@@ -66,4 +75,5 @@ export const ECS = createReactAPI(world);
 export const queries = {
   persons: world.with('kind', 'pose').where((e) => e.kind === 'person'),
   creations: world.with('kind', 'shape', 'position').where((e) => e.kind === 'creation'),
+  trees: world.with('kind', 'branches').where((e) => e.kind === 'tree'),
 };

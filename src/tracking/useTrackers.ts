@@ -4,6 +4,7 @@ import { HandTracker, isPinching, isOpenHand, isFist, pinchWorld } from './HandT
 import { FaceTracker, readFaceState, type FaceState } from './FaceTracker';
 import { world, queries, type Entity, type Hand, type PersonMode } from '../world/ecs';
 import { composeCreation } from '../factories/randomComposer';
+import { composeTree } from '../factories/treeFactory';
 import { playCreationSound, playClapBurst } from '../audio/audioEngine';
 
 const WORLD_WIDTH = 8;
@@ -36,7 +37,10 @@ interface PersonShell {
   id: string;
   entity: Entity;
   prevPinch: Record<string, boolean>;
+  prevFist: Record<string, boolean>;
   lastClapAt: number;
+  lastTreeAt: number;
+  treeCount: number;
 }
 
 const PERSON_MODES: PersonMode[] = ['skeleton', 'particles', 'dual'];
@@ -135,7 +139,7 @@ function tick(
         mode: currentMode,
       };
       world.add(ent);
-      shell = { id: ent.id, entity: ent, prevPinch: {}, lastClapAt: 0 };
+      shell = { id: ent.id, entity: ent, prevPinch: {}, prevFist: {}, lastClapAt: 0, lastTreeAt: 0, treeCount: 0 };
       shells.set(i, shell);
     }
     shell.entity.pose = {
@@ -194,6 +198,24 @@ function tick(
         }
       }
       shell.prevPinch[pinchKey] = pinch;
+
+      // 주먹 첫 진입 → 그 자리에 나무 심기 (사람당 max 3그루, 1.2초 쿨다운)
+      const fistKey = `${ownerId}-${handedness}-fist`;
+      const wasFist = shell.prevFist[fistKey] ?? false;
+      if (fist && !wasFist && handLms.length >= 21 && shell.treeCount < 3 && Date.now() - shell.lastTreeAt > 1200) {
+        // 손목(0) 위치를 월드 좌표로
+        const wrist = handLms[0];
+        const treePos: [number, number, number] = [
+          -((wrist.x - 0.5) * WORLD_WIDTH),
+          -(wrist.y - 0.5) * WORLD_HEIGHT - 0.3, // 약간 아래 (나무 밑동)
+          -wrist.z * 4 - 0.5,
+        ];
+        const tree = composeTree({ position: treePos, personId: ownerId });
+        world.add(tree);
+        shell.lastTreeAt = Date.now();
+        shell.treeCount++;
+      }
+      shell.prevFist[fistKey] = fist;
 
       // 박수 — 양손 손목 가까움 + 쿨다운 600ms → 모드 셔플
       if (handedness === 'Right' && shell.entity.hands && shell.entity.hands.length >= 2) {
