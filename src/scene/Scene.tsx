@@ -18,7 +18,9 @@ import { FlowFieldSystem } from '../world/systems/flowFieldSystem';
 import { SpellSystem } from '../world/systems/spellSystem';
 import { ComboSystem } from '../world/systems/comboSystem';
 import { InfluenceSystem } from '../world/systems/influenceSystem';
+import { PersistenceSystem } from '../world/systems/persistenceSystem';
 import { HandTrails } from './HandTrails';
+import { Constellation } from './Constellation';
 
 export function Scene() {
   return (
@@ -43,6 +45,7 @@ export function Scene() {
       <Trees />
       <FlowGlimpse />
       <ReactionDiffusionPlane />
+      <Constellation />
       <HandTrails />
       <Spells />
       <CreationLifecycle />
@@ -52,6 +55,7 @@ export function Scene() {
       <SpellSystem />
       <ComboSystem />
       <InfluenceSystem />
+      <PersistenceSystem />
       <PostFX />
     </Canvas>
   );

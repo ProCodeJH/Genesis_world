@@ -5,6 +5,7 @@ import { useTrackers } from './tracking/useTrackers';
 import { composeCreation } from './factories/randomComposer';
 import { world } from './world/ecs';
 import { useSceneStore } from './store/sceneStore';
+import { loadSnapshot, restoreEntities, clearSnapshot } from './world/persistence';
 
 const DEFAULT_FOLDER = 'C:/Users/exodia/.local/bin/Nava';
 
@@ -26,6 +27,22 @@ export default function App() {
 
   const { ready: trackersReady, error: trackerError } = useTrackers(tracking);
   const postFxMode = useSceneStore((s) => s.postFxMode);
+  const [restoredCount, setRestoredCount] = useState(0);
+
+  // 앱 시작 시 영속된 흔적 복원
+  useEffect(() => {
+    const serialized = loadSnapshot();
+    if (serialized && serialized.length > 0) {
+      const restored = restoreEntities(serialized);
+      for (const e of restored) world.add(e);
+      setRestoredCount(restored.length);
+    }
+  }, []);
+
+  const clearTraces = useCallback(() => {
+    clearSnapshot();
+    setRestoredCount(0);
+  }, []);
 
   const totalSize = useFolderStore((s) => s.totalSize);
   const fileCount = useFolderStore((s) => s.fileCount);
@@ -85,10 +102,17 @@ export default function App() {
     <div style={rootStyle}>
       <Scene />
       <div style={hudStyle}>
-        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.9</span></div>
+        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v1.0</span></div>
         <div style={hintStyle}>
-          v0.9 Influences — 손 자력 / 마법 충격 / 오라 색 / 빔 파괴 / 손 잔상<br />
+          v1.0 Persistence — 어제 만든 빛이 오늘도 떠있다<br />
           <span style={{ color: '#66e0ff' }}>FX: {postFxMode}</span>
+          {restoredCount > 0 && (
+            <>
+              <br />
+              <span style={{ color: '#ffd86b' }}>🕰️ 이전 세션의 {restoredCount}개 흔적 복원됨</span>{' '}
+              <button onClick={clearTraces} style={{ ...btnStop, padding: '2px 6px', fontSize: 9 }}>지우기</button>
+            </>
+          )}
         </div>
 
         <div style={sectionLabel}>📂 폴더</div>
