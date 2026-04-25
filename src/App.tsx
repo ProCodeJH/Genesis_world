@@ -85,9 +85,9 @@ export default function App() {
     <div style={rootStyle}>
       <Scene />
       <div style={hudStyle}>
-        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.8</span></div>
+        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.9</span></div>
         <div style={hintStyle}>
-          v0.8 마법 12종 + 협업 시스템 (두 사람 모먼트)<br />
+          v0.9 Influences — 손 자력 / 마법 충격 / 오라 색 / 빔 파괴 / 손 잔상<br />
           <span style={{ color: '#66e0ff' }}>FX: {postFxMode}</span>
         </div>
 
