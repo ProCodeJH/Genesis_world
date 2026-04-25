@@ -6,7 +6,7 @@
  * 새 SpellKind 추가 후 spellFactory.composeSpell + Spells.tsx 렌더 + spellGestureSystem 트리거.
  */
 
-export type SpellKind = 'sphere' | 'beam' | 'pillar' | 'snap' | 'chidori' | 'aura' | 'wave' | 'magicCircle';
+export type SpellKind = 'sphere' | 'beam' | 'pillar' | 'snap' | 'chidori' | 'aura' | 'wave' | 'magicCircle' | 'spiral' | 'lightningBolt' | 'comboSphere' | 'highFive';
 
 export type SpellPhase = 'charge' | 'release' | 'fade';
 
@@ -25,6 +25,10 @@ export const SPELL_TIMINGS: Record<SpellKind, SpellPhaseTimings> = {
   aura: { charge: 0.5, release: 2.5, fade: 0.8 },        // 오라 — 길게 유지
   wave: { charge: 0.1, release: 1.2, fade: 0.4 },        // 충격파 — 즉발 퍼짐
   magicCircle: { charge: 0.3, release: 2.0, fade: 0.7 }, // 소환진 — 회전 유지
+  spiral: { charge: 0.5, release: 1.8, fade: 0.7 },      // Rasenshuriken — 회전체 + 칼날
+  lightningBolt: { charge: 0.15, release: 0.5, fade: 0.3 }, // 번개 — 즉발 직선
+  comboSphere: { charge: 0.2, release: 2.5, fade: 1.0 },  // 콜라보 거대 회전체
+  highFive: { charge: 0.05, release: 0.3, fade: 0.5 },    // 하이파이브 폭죽
 };
 
 export const SPELL_LABELS: Record<SpellKind, string> = {
@@ -36,6 +40,10 @@ export const SPELL_LABELS: Record<SpellKind, string> = {
   aura: '✨ Aura',
   wave: '💫 Wave',
   magicCircle: '🔮 Magic Circle',
+  spiral: '🌀 Rasenshuriken',
+  lightningBolt: '⚡ Lightning Bolt',
+  comboSphere: '🌌 Combo Sphere',
+  highFive: '🎆 High Five',
 };
 
 /** 현재 phase 계산 + 그 phase 안에서의 0..1 진행도 */

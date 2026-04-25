@@ -85,9 +85,9 @@ export default function App() {
     <div style={rootStyle}>
       <Scene />
       <div style={hudStyle}>
-        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.7</span></div>
+        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.8</span></div>
         <div style={hintStyle}>
-          v0.7 마법 8종 + Reaction-Diffusion (Turing 1952)<br />
+          v0.8 마법 12종 + 협업 시스템 (두 사람 모먼트)<br />
           <span style={{ color: '#66e0ff' }}>FX: {postFxMode}</span>
         </div>
 
@@ -130,7 +130,12 @@ export default function App() {
             ✊👌 한손 주먹 + 다른손 핀치 → ⚡ Chidori<br />
             🙌 양손 펴고 양손 어깨 위 → ✨ Aura<br />
             👐 양손 펴고 멀리 (&gt;0.7) → 💫 Wave<br />
-            👇 한 손 펴고 hip 아래 → 🔮 Magic Circle
+            👇 한 손 펴고 hip 아래 → 🔮 Magic Circle<br />
+            🤏🤏 양손 핀치 가깝게 → 🌀 Rasenshuriken<br />
+            ✊✊ 양손 주먹 가깝게 → ⚡ Lightning Bolt<br /><br />
+            <b>협업 (두 사람)</b><br />
+            🤝 두 사람 손목 닿음 → 🎆 High Five<br />
+            🌀+🌀 두 사람 Rasengan 동시 → 🌌 Combo Sphere
           </div>
         )}
 

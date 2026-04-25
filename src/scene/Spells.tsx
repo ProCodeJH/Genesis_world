@@ -9,15 +9,7 @@ const MAX_SNAP_PARTICLES = 300;
 const MAX_BEAM_PARTICLES = 200;
 
 /**
- * 8종 spell 렌더:
- *   sphere: 회전 구체 + 외부 링 (Rasengan)
- *   beam:   양 끝 구체 + 가운데 빛 실린더 (Kamehameha)
- *   pillar: 위로 늘어나는 빛 기둥 (Bankai)
- *   snap:   사방 폭발 입자 (Amaterasu)
- *   chidori: 사방 jagged 번개 라인 (Chidori)
- *   aura:   사람 따라가는 큰 발광 sphere (Aura)
- *   wave:   동심원 ring 3개 퍼짐 (Shockwave)
- *   magicCircle: 회전 ring + 펜타그램 (소환진)
+ * 12종 spell 렌더 (8 단독 + 2 양손 + 2 콜라보).
  */
 export function Spells() {
   return (
@@ -30,6 +22,10 @@ export function Spells() {
       <AuraSpells />
       <WaveSpells />
       <MagicCircleSpells />
+      <SpiralSpells />
+      <LightningBoltSpells />
+      <ComboSphereSpells />
+      <HighFiveSpells />
     </>
   );
 }
@@ -622,6 +618,271 @@ function MagicCircleSpells() {
         <BoundMaterial intensity={3} />
       </instancedMesh>
     </>
+  );
+}
+
+// ─── Spiral (Rasenshuriken) ──────────────────────
+function SpiralSpells() {
+  const coreRef = useRef<THREE.InstancedMesh>(null);
+  const bladeRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const tmpC = useMemo(() => new THREE.Color(), []);
+
+  useFrame(() => {
+    let cn = 0;
+    let bn = 0;
+    const t = performance.now() * 0.001;
+    for (const s of [...queries.spells]) {
+      if (s.spellKind !== 'spiral' || !s.spellOrigin) continue;
+      const ph = spellPhase('spiral', s.age ?? 0);
+      let scale = 0, opa = 0;
+      if (ph.phase === 'charge') { scale = ph.t * 0.4; opa = ph.t; }
+      else if (ph.phase === 'release') { scale = 0.4 + Math.sin(ph.t * Math.PI) * 0.05; opa = 1; }
+      else { scale = 0.4 - ph.t * 0.2; opa = 1 - ph.t; }
+      const cr = s.primaryColor ?? [1, 1, 1];
+      const intens = (s.spellIntensity ?? 1) * opa;
+      tmpC.setRGB(cr[0] * intens, cr[1] * intens, cr[2] * intens);
+
+      if (coreRef.current) {
+        dummy.position.set(s.spellOrigin[0], s.spellOrigin[1], s.spellOrigin[2]);
+        dummy.rotation.set(t * 6, t * 4, 0);
+        dummy.scale.setScalar(scale);
+        dummy.updateMatrix();
+        coreRef.current.setMatrixAt(cn, dummy.matrix);
+        coreRef.current.setColorAt(cn, tmpC);
+        cn++;
+      }
+      // 외부 칼날 4개
+      if (bladeRef.current) {
+        for (let k = 0; k < 4; k++) {
+          if (bn >= 32) break;
+          const angle = (k / 4) * Math.PI * 2 + t * 5;
+          const bx = s.spellOrigin[0] + Math.cos(angle) * scale * 1.8;
+          const by = s.spellOrigin[1] + Math.sin(angle) * scale * 1.8;
+          dummy.position.set(bx, by, s.spellOrigin[2]);
+          dummy.rotation.set(0, 0, angle + Math.PI / 2);
+          dummy.scale.set(scale * 0.15, scale * 0.6, scale * 0.05);
+          dummy.updateMatrix();
+          bladeRef.current.setMatrixAt(bn, dummy.matrix);
+          bladeRef.current.setColorAt(bn, tmpC);
+          bn++;
+        }
+      }
+    }
+    if (coreRef.current) {
+      coreRef.current.count = cn;
+      coreRef.current.instanceMatrix.needsUpdate = true;
+      if (coreRef.current.instanceColor) coreRef.current.instanceColor.needsUpdate = true;
+    }
+    if (bladeRef.current) {
+      bladeRef.current.count = bn;
+      bladeRef.current.instanceMatrix.needsUpdate = true;
+      if (bladeRef.current.instanceColor) bladeRef.current.instanceColor.needsUpdate = true;
+    }
+  });
+
+  return (
+    <>
+      <instancedMesh ref={coreRef} args={[undefined, undefined, 8]} frustumCulled={false}>
+        <icosahedronGeometry args={[1, 1]} />
+        <BoundMaterial intensity={3.5} />
+      </instancedMesh>
+      <instancedMesh ref={bladeRef} args={[undefined, undefined, 32]} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <BoundMaterial intensity={3} />
+      </instancedMesh>
+    </>
+  );
+}
+
+// ─── Lightning Bolt (위에서 아래) ──────────────────
+function LightningBoltSpells() {
+  const SEGS = 8;
+  const MAX_SPELLS = 8;
+  const positions = useMemo(() => new Float32Array(MAX_SPELLS * SEGS * 2 * 3), []);
+  const colors = useMemo(() => new Float32Array(MAX_SPELLS * SEGS * 2 * 3), []);
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    g.setDrawRange(0, 0);
+    return g;
+  }, [positions, colors]);
+  const tmpC = useMemo(() => new THREE.Color(), []);
+
+  useFrame(() => {
+    let v = 0;
+    for (const s of [...queries.spells]) {
+      if (s.spellKind !== 'lightningBolt' || !s.spellOrigin || !s.spellTarget) continue;
+      const ph = spellPhase('lightningBolt', s.age ?? 0);
+      let opa = 0;
+      if (ph.phase === 'charge') opa = ph.t * 0.5;
+      else if (ph.phase === 'release') opa = 1;
+      else opa = 1 - ph.t;
+      const cr = s.primaryColor ?? [1, 1, 1];
+      const intens = (s.spellIntensity ?? 1) * opa;
+      tmpC.setRGB(cr[0] * intens + 0.6 * intens, cr[1] * intens + 0.6 * intens, cr[2] * intens + 1.0 * intens);
+
+      const ox = s.spellOrigin[0], oy = s.spellOrigin[1], oz = s.spellOrigin[2];
+      const tx = s.spellTarget[0], ty = s.spellTarget[1], tz = s.spellTarget[2];
+      let px = ox, py = oy, pz = oz;
+      for (let k = 0; k < SEGS; k++) {
+        const tk = (k + 1) / SEGS;
+        const baseX = ox + (tx - ox) * tk;
+        const baseY = oy + (ty - oy) * tk;
+        const baseZ = oz + (tz - oz) * tk;
+        const jit = 0.18 * (1 - Math.abs(tk - 0.5) * 1.6);
+        const nx = baseX + (Math.random() - 0.5) * jit;
+        const ny = baseY + (Math.random() - 0.5) * jit * 0.3;
+        const nz = baseZ + (Math.random() - 0.5) * jit;
+        positions[v * 3] = px; positions[v * 3 + 1] = py; positions[v * 3 + 2] = pz;
+        colors[v * 3] = tmpC.r; colors[v * 3 + 1] = tmpC.g; colors[v * 3 + 2] = tmpC.b;
+        v++;
+        positions[v * 3] = nx; positions[v * 3 + 1] = ny; positions[v * 3 + 2] = nz;
+        colors[v * 3] = tmpC.r; colors[v * 3 + 1] = tmpC.g; colors[v * 3 + 2] = tmpC.b;
+        v++;
+        px = nx; py = ny; pz = nz;
+      }
+    }
+    geo.setDrawRange(0, v);
+    (geo.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+    (geo.attributes.color as THREE.BufferAttribute).needsUpdate = true;
+  });
+
+  return (
+    <lineSegments geometry={geo} frustumCulled={false}>
+      <lineBasicMaterial vertexColors transparent opacity={1} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </lineSegments>
+  );
+}
+
+// ─── Combo Sphere (두 사람 결합 거대 회전체) ──────
+function ComboSphereSpells() {
+  const coreRef = useRef<THREE.InstancedMesh>(null);
+  const ringARef = useRef<THREE.InstancedMesh>(null);
+  const ringBRef = useRef<THREE.InstancedMesh>(null);
+  const ringCRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const tmpC = useMemo(() => new THREE.Color(), []);
+
+  useFrame(() => {
+    let n = 0;
+    const t = performance.now() * 0.001;
+    for (const s of [...queries.spells]) {
+      if (s.spellKind !== 'comboSphere' || !s.spellOrigin) continue;
+      const ph = spellPhase('comboSphere', s.age ?? 0);
+      let scale = 0, opa = 0;
+      if (ph.phase === 'charge') { scale = ph.t * 0.5; opa = ph.t; }
+      else if (ph.phase === 'release') { scale = 0.5 + Math.sin(ph.t * Math.PI * 2) * 0.08 + ph.t * 0.2; opa = 1; }
+      else { scale = 0.7 + ph.t * 0.4; opa = 1 - ph.t; }
+      const cr = s.primaryColor ?? [1, 1, 1];
+      const intens = (s.spellIntensity ?? 1) * opa * 1.5;
+      tmpC.setRGB(cr[0] * intens, cr[1] * intens, cr[2] * intens);
+
+      if (coreRef.current) {
+        dummy.position.set(s.spellOrigin[0], s.spellOrigin[1], s.spellOrigin[2]);
+        dummy.rotation.set(t * 1.5, t * 2, 0);
+        dummy.scale.setScalar(scale);
+        dummy.updateMatrix();
+        coreRef.current.setMatrixAt(n, dummy.matrix);
+        coreRef.current.setColorAt(n, tmpC);
+      }
+      [ringARef, ringBRef, ringCRef].forEach((ref, ridx) => {
+        const mesh = ref.current;
+        if (!mesh) return;
+        dummy.position.set(s.spellOrigin![0], s.spellOrigin![1], s.spellOrigin![2]);
+        const speed = 2 + ridx * 1.5;
+        dummy.rotation.set(t * speed * (ridx % 2 === 0 ? 1 : -1), t * (speed + 1), Math.PI / 3 * ridx);
+        dummy.scale.setScalar(scale * (1.5 + ridx * 0.3));
+        dummy.updateMatrix();
+        mesh.setMatrixAt(n, dummy.matrix);
+        mesh.setColorAt(n, tmpC);
+      });
+      n++;
+    }
+    [coreRef, ringARef, ringBRef, ringCRef].forEach((ref) => {
+      const mesh = ref.current;
+      if (!mesh) return;
+      mesh.count = n;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    });
+  });
+
+  return (
+    <>
+      <instancedMesh ref={coreRef} args={[undefined, undefined, 4]} frustumCulled={false}>
+        <icosahedronGeometry args={[1, 2]} />
+        <BoundMaterial intensity={4} />
+      </instancedMesh>
+      <instancedMesh ref={ringARef} args={[undefined, undefined, 4]} frustumCulled={false}>
+        <torusGeometry args={[1, 0.06, 12, 48]} />
+        <BoundMaterial intensity={3} />
+      </instancedMesh>
+      <instancedMesh ref={ringBRef} args={[undefined, undefined, 4]} frustumCulled={false}>
+        <torusGeometry args={[1, 0.06, 12, 48]} />
+        <BoundMaterial intensity={3} />
+      </instancedMesh>
+      <instancedMesh ref={ringCRef} args={[undefined, undefined, 4]} frustumCulled={false}>
+        <torusGeometry args={[1, 0.06, 12, 48]} />
+        <BoundMaterial intensity={3} />
+      </instancedMesh>
+    </>
+  );
+}
+
+// ─── High Five (별 30개 폭죽) ──────────────────────
+function HighFiveSpells() {
+  const PARTICLES = 30;
+  const MAX_SPELLS = 6;
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const tmpC = useMemo(() => new THREE.Color(), []);
+
+  useFrame(() => {
+    let n = 0;
+    for (const s of [...queries.spells]) {
+      if (s.spellKind !== 'highFive' || !s.spellOrigin) continue;
+      const ph = spellPhase('highFive', s.age ?? 0);
+      let radius = 0, opa = 0, scale = 0.06;
+      if (ph.phase === 'charge') { radius = 0.05; opa = ph.t; scale = 0.08 * ph.t; }
+      else if (ph.phase === 'release') { radius = ph.t * 1.5; opa = 1; scale = 0.08; }
+      else { radius = 1.5 + ph.t * 0.5; opa = 1 - ph.t; scale = 0.08 * (1 - ph.t); }
+      const cr = s.primaryColor ?? [1, 1, 1];
+      const intens = (s.spellIntensity ?? 1) * opa;
+      tmpC.setRGB(cr[0] * intens + 0.2 * intens, cr[1] * intens + 0.4 * intens, cr[2] * intens + 0.6 * intens);
+
+      const seedBase = (s.seed ?? 0);
+      for (let k = 0; k < PARTICLES; k++) {
+        if (n >= MAX_SPELLS * PARTICLES) break;
+        const phi = (k / PARTICLES + seedBase * 0.01) * Math.PI * 2;
+        const theta = ((k * 0.71 + seedBase * 0.02) % 1) * Math.PI;
+        const px = s.spellOrigin[0] + Math.sin(theta) * Math.cos(phi) * radius;
+        const py = s.spellOrigin[1] + Math.cos(theta) * radius;
+        const pz = s.spellOrigin[2] + Math.sin(theta) * Math.sin(phi) * radius;
+        if (meshRef.current) {
+          dummy.position.set(px, py, pz);
+          dummy.rotation.set(phi, theta, 0);
+          dummy.scale.setScalar(scale);
+          dummy.updateMatrix();
+          meshRef.current.setMatrixAt(n, dummy.matrix);
+          meshRef.current.setColorAt(n, tmpC);
+        }
+        n++;
+      }
+    }
+    if (meshRef.current) {
+      meshRef.current.count = n;
+      meshRef.current.instanceMatrix.needsUpdate = true;
+      if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
+    }
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, 30 * 6]} frustumCulled={false}>
+      <octahedronGeometry args={[1, 0]} />
+      <BoundMaterial intensity={3.5} />
+    </instancedMesh>
   );
 }
 

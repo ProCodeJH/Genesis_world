@@ -51,6 +51,8 @@ interface PersonShell {
   lastAuraAt: number;
   lastWaveAt: number;
   lastCircleAt: number;
+  lastSpiralAt: number;
+  lastBoltAt: number;
 }
 
 const PERSON_MODES: PersonMode[] = ['skeleton', 'particles', 'dual'];
@@ -149,7 +151,7 @@ function tick(
         mode: currentMode,
       };
       world.add(ent);
-      shell = { id: ent.id, entity: ent, prevPinch: {}, prevFist: {}, lastClapAt: 0, lastTreeAt: 0, treeCount: 0, lastSphereAt: 0, lastBeamAt: 0, lastPillarAt: 0, lastChidoriAt: 0, lastAuraAt: 0, lastWaveAt: 0, lastCircleAt: 0 };
+      shell = { id: ent.id, entity: ent, prevPinch: {}, prevFist: {}, lastClapAt: 0, lastTreeAt: 0, treeCount: 0, lastSphereAt: 0, lastBeamAt: 0, lastPillarAt: 0, lastChidoriAt: 0, lastAuraAt: 0, lastWaveAt: 0, lastCircleAt: 0, lastSpiralAt: 0, lastBoltAt: 0 };
       shells.set(i, shell);
     }
     shell.entity.pose = {
@@ -273,6 +275,31 @@ function tick(
     const dx = lw.x - rw.x, dy = lw.y - rw.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     const now = Date.now();
+
+    // Spiral (Rasenshuriken): 양손 모두 핀치 + 가까움 (Sphere랑 차별: 펴짐 vs 핀치)
+    if (lh.isPinching && rh.isPinching && dist < 0.18 && now - shell.lastSpiralAt > 3000) {
+      shell.lastSpiralAt = now;
+      const mid: [number, number, number] = [
+        -(((lw.x + rw.x) / 2 - 0.5) * WORLD_WIDTH),
+        -(((lw.y + rw.y) / 2 - 0.5) * WORLD_HEIGHT),
+        -((lw.z + rw.z) / 2) * 4,
+      ];
+      world.add(composeSpell({ kind: 'spiral', origin: mid, personId: ownerId }));
+      void playSpell('spiral');
+    }
+
+    // Lightning Bolt: 양손 모두 fist + 가까움 (양주먹 자세)
+    if (lh.isFist && rh.isFist && dist < 0.2 && now - shell.lastBoltAt > 2500) {
+      shell.lastBoltAt = now;
+      const mid: [number, number, number] = [
+        -(((lw.x + rw.x) / 2 - 0.5) * WORLD_WIDTH),
+        -(((lw.y + rw.y) / 2 - 0.5) * WORLD_HEIGHT) + 1.5, // 위에서 시작
+        -((lw.z + rw.z) / 2) * 4,
+      ];
+      const target: [number, number, number] = [mid[0], mid[1] - 3, mid[2]];
+      world.add(composeSpell({ kind: 'lightningBolt', origin: mid, target, personId: ownerId }));
+      void playSpell('lightningBolt');
+    }
 
     // Sphere (Rasengan): 양손 펴짐 + 가까움 + 핀치 아님
     if (lh.isOpen && rh.isOpen && !lh.isPinching && !rh.isPinching && dist < 0.18 && now - shell.lastSphereAt > 2500) {

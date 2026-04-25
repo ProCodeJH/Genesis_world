@@ -89,5 +89,28 @@ export async function playSpell(kind: SpellKind): Promise<void> {
       setTimeout(() => bell?.triggerAttackRelease('A4', '4n'), 100);
       setTimeout(() => bell?.triggerAttackRelease('C5', '4n'), 200);
       break;
+    case 'spiral':
+      // Rasenshuriken: 차지 → 회전 휘파람 + bell
+      lowOsc?.triggerAttackRelease('E2', '0.4');
+      setTimeout(() => bell?.triggerAttackRelease('B5', '8n'), 400);
+      setTimeout(() => bell?.triggerAttackRelease('D6', '8n'), 600);
+      break;
+    case 'lightningBolt':
+      // 번개: 짧은 cymbal + 빠른 sub
+      bell?.triggerAttackRelease('C6', '32n');
+      lowOsc?.triggerAttackRelease('A1', '16n');
+      break;
+    case 'comboSphere':
+      // 콜라보: 깊은 코드 + 길게
+      lowOsc?.triggerAttackRelease('C2', '0.6');
+      setTimeout(() => osc?.triggerAttackRelease('C5', '1n'), 100);
+      setTimeout(() => osc?.triggerAttackRelease('G5', '1n'), 200);
+      setTimeout(() => bell?.triggerAttackRelease('E6', '4n'), 400);
+      break;
+    case 'highFive':
+      // 하이파이브: 짧고 밝은 종 두 번
+      bell?.triggerAttackRelease('G6', '32n');
+      setTimeout(() => bell?.triggerAttackRelease('C7', '32n'), 60);
+      break;
   }
 }

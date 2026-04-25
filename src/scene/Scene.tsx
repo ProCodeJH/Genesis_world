@@ -16,6 +16,7 @@ import { LSystemLifecycle } from '../world/systems/lsystemSystem';
 import { BoidsSystem } from '../world/systems/boidsSystem';
 import { FlowFieldSystem } from '../world/systems/flowFieldSystem';
 import { SpellSystem } from '../world/systems/spellSystem';
+import { ComboSystem } from '../world/systems/comboSystem';
 
 export function Scene() {
   return (
@@ -46,6 +47,7 @@ export function Scene() {
       <BoidsSystem />
       <FlowFieldSystem />
       <SpellSystem />
+      <ComboSystem />
       <PostFX />
     </Canvas>
   );
