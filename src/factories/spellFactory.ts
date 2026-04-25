@@ -9,6 +9,8 @@ interface ComposeSpellOpts {
   origin: [number, number, number];
   target?: [number, number, number];
   personId: number;
+  /** Aura 등 person follow 모드 */
+  followPersonId?: number;
 }
 
 export function composeSpell(opts: ComposeSpellOpts): Entity {
@@ -35,6 +37,7 @@ export function composeSpell(opts: ComposeSpellOpts): Entity {
     spellKind: opts.kind,
     spellOrigin: [...opts.origin],
     spellTarget: opts.target ? [...opts.target] : undefined,
+    spellFollowPersonId: opts.followPersonId,
     age: 0,
     maxAge: dur,
     palette,

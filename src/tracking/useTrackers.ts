@@ -47,6 +47,10 @@ interface PersonShell {
   lastSphereAt: number;
   lastBeamAt: number;
   lastPillarAt: number;
+  lastChidoriAt: number;
+  lastAuraAt: number;
+  lastWaveAt: number;
+  lastCircleAt: number;
 }
 
 const PERSON_MODES: PersonMode[] = ['skeleton', 'particles', 'dual'];
@@ -145,7 +149,7 @@ function tick(
         mode: currentMode,
       };
       world.add(ent);
-      shell = { id: ent.id, entity: ent, prevPinch: {}, prevFist: {}, lastClapAt: 0, lastTreeAt: 0, treeCount: 0, lastSphereAt: 0, lastBeamAt: 0, lastPillarAt: 0 };
+      shell = { id: ent.id, entity: ent, prevPinch: {}, prevFist: {}, lastClapAt: 0, lastTreeAt: 0, treeCount: 0, lastSphereAt: 0, lastBeamAt: 0, lastPillarAt: 0, lastChidoriAt: 0, lastAuraAt: 0, lastWaveAt: 0, lastCircleAt: 0 };
       shells.set(i, shell);
     }
     shell.entity.pose = {
@@ -192,15 +196,23 @@ function tick(
       shell.entity.hands!.push(handObj);
 
       if (pinch && !wasPinching && handObj.pinchPosition) {
-        const creation = composeCreation({
-          position: handObj.pinchPosition,
-          personId: ownerId,
-          face: shell.entity.face,
-          origin: 'hand',
-        });
-        world.add(creation);
-        if (creation.palette && creation.seed != null) {
-          void playCreationSound(creation.palette, creation.seed);
+        // 다른 손이 fist면 Chidori, 아니면 일반 creation
+        const otherHand = shell.entity.hands?.find((h) => h.handedness !== handedness);
+        if (otherHand?.isFist && Date.now() - shell.lastChidoriAt > 2000) {
+          shell.lastChidoriAt = Date.now();
+          world.add(composeSpell({ kind: 'chidori', origin: handObj.pinchPosition, personId: ownerId }));
+          void playSpell('chidori');
+        } else {
+          const creation = composeCreation({
+            position: handObj.pinchPosition,
+            personId: ownerId,
+            face: shell.entity.face,
+            origin: 'hand',
+          });
+          world.add(creation);
+          if (creation.palette && creation.seed != null) {
+            void playCreationSound(creation.palette, creation.seed);
+          }
         }
       }
       shell.prevPinch[pinchKey] = pinch;
@@ -288,7 +300,8 @@ function tick(
     }
 
     // Pillar (Bankai): 한 손 펴짐 + 어깨보다 위
-    const poseLms = shell.entity.pose?.landmarks as { y: number }[] | undefined;
+    const poseLms = shell.entity.pose?.landmarks as { x: number; y: number; z: number; visibility: number }[] | undefined;
+    let pillarFired = false;
     for (const h of hands) {
       if (!h.isOpen || !poseLms) continue;
       const wrist = h.landmarks[0];
@@ -302,7 +315,55 @@ function tick(
         ];
         world.add(composeSpell({ kind: 'pillar', origin: wpos, personId: ownerId }));
         void playSpell('pillar');
+        pillarFired = true;
         break;
+      }
+    }
+
+    // Aura: 양손 모두 펴짐 + 양 손목 모두 어깨 위 (만세 자세)
+    if (!pillarFired && lh.isOpen && rh.isOpen && poseLms && now - shell.lastAuraAt > 4000) {
+      const lShoulder = poseLms[11], rShoulder = poseLms[12];
+      if (lShoulder && rShoulder && lw.y < lShoulder.y - 0.15 && rw.y < rShoulder.y - 0.15) {
+        shell.lastAuraAt = now;
+        const chest: [number, number, number] = [
+          -(((lShoulder.x + rShoulder.x) / 2 - 0.5) * WORLD_WIDTH),
+          -(((lShoulder.y + rShoulder.y) / 2 - 0.5) * WORLD_HEIGHT),
+          -((lShoulder.z + rShoulder.z) / 2) * 4,
+        ];
+        world.add(composeSpell({ kind: 'aura', origin: chest, personId: ownerId, followPersonId: ownerId }));
+        void playSpell('aura');
+      }
+    }
+
+    // Wave (Shockwave): 양손 펴짐 + 같은 높이 + 매우 멀리 (Beam의 0.25~0.55보다 큼)
+    if (lh.isOpen && rh.isOpen && Math.abs(dy) < 0.1 && dist > 0.7 && now - shell.lastWaveAt > 3000) {
+      shell.lastWaveAt = now;
+      const mid: [number, number, number] = [
+        -(((lw.x + rw.x) / 2 - 0.5) * WORLD_WIDTH),
+        -(((lw.y + rw.y) / 2 - 0.5) * WORLD_HEIGHT),
+        -((lw.z + rw.z) / 2) * 4,
+      ];
+      world.add(composeSpell({ kind: 'wave', origin: mid, personId: ownerId }));
+      void playSpell('wave');
+    }
+
+    // Magic Circle: 한 손 펴짐 + 손목이 hip 아래 (소환 자세)
+    if (poseLms && now - shell.lastCircleAt > 3500) {
+      for (const h of hands) {
+        if (!h.isOpen) continue;
+        const wrist = h.landmarks[0];
+        const hip = h.handedness === 'Left' ? poseLms[23] : poseLms[24];
+        if (hip && wrist.y > hip.y + 0.05) {
+          shell.lastCircleAt = now;
+          const wpos: [number, number, number] = [
+            -((wrist.x - 0.5) * WORLD_WIDTH),
+            -(wrist.y - 0.5) * WORLD_HEIGHT,
+            -wrist.z * 4,
+          ];
+          world.add(composeSpell({ kind: 'magicCircle', origin: wpos, personId: ownerId }));
+          void playSpell('magicCircle');
+          break;
+        }
       }
     }
   }

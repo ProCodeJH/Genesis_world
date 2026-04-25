@@ -9,11 +9,15 @@ const MAX_SNAP_PARTICLES = 300;
 const MAX_BEAM_PARTICLES = 200;
 
 /**
- * 4종 spell 렌더:
- *   sphere: 회전 구체 + 외부 링 + 수렴 입자
- *   beam:   양 끝 구체 + 가운데 빛 실린더
- *   pillar: 위로 늘어나는 빛 기둥 + 회전 링
- *   snap:   사방 폭발 입자 + 중심 광역 펄스
+ * 8종 spell 렌더:
+ *   sphere: 회전 구체 + 외부 링 (Rasengan)
+ *   beam:   양 끝 구체 + 가운데 빛 실린더 (Kamehameha)
+ *   pillar: 위로 늘어나는 빛 기둥 (Bankai)
+ *   snap:   사방 폭발 입자 (Amaterasu)
+ *   chidori: 사방 jagged 번개 라인 (Chidori)
+ *   aura:   사람 따라가는 큰 발광 sphere (Aura)
+ *   wave:   동심원 ring 3개 퍼짐 (Shockwave)
+ *   magicCircle: 회전 ring + 펜타그램 (소환진)
  */
 export function Spells() {
   return (
@@ -22,6 +26,10 @@ export function Spells() {
       <BeamSpells />
       <PillarSpells />
       <SnapSpells />
+      <ChidoriSpells />
+      <AuraSpells />
+      <WaveSpells />
+      <MagicCircleSpells />
     </>
   );
 }
@@ -355,6 +363,266 @@ function BoundMaterial({ intensity }: { intensity: number }) {
     mat.userData.bound = true;
   });
   return <meshStandardMaterial ref={matRef} metalness={0.5} roughness={0.2} emissiveIntensity={intensity} transparent depthWrite={false} blending={THREE.AdditiveBlending} />;
+}
+
+// ─── Chidori (Branching Lightning 치도리) ────────────
+function ChidoriSpells() {
+  const NUM_BOLTS = 8;
+  const SEGS = 6;
+  const MAX_SPELLS = 8;
+  const MAX_VERTS = MAX_SPELLS * NUM_BOLTS * SEGS * 2;
+  const positions = useMemo(() => new Float32Array(MAX_VERTS * 3), []);
+  const colors = useMemo(() => new Float32Array(MAX_VERTS * 3), []);
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    g.setDrawRange(0, 0);
+    return g;
+  }, [positions, colors]);
+  const tmpC = useMemo(() => new THREE.Color(), []);
+
+  useFrame(() => {
+    let v = 0;
+    for (const s of [...queries.spells]) {
+      if (s.spellKind !== 'chidori' || !s.spellOrigin) continue;
+      const ph = spellPhase('chidori', s.age ?? 0);
+      let opa = 0;
+      if (ph.phase === 'charge') opa = ph.t;
+      else if (ph.phase === 'release') opa = 1;
+      else opa = 1 - ph.t;
+      const cr = s.primaryColor ?? [1, 1, 1];
+      const intens = (s.spellIntensity ?? 1) * opa;
+      tmpC.setRGB(cr[0] * intens + 0.4 * intens, cr[1] * intens + 0.4 * intens, cr[2] * intens + 1.0 * intens);
+      const ox = s.spellOrigin[0], oy = s.spellOrigin[1], oz = s.spellOrigin[2];
+      const seedBase = (s.seed ?? 0) * 17;
+      const reach = 0.4 + Math.min(1, ph.t * 2) * 0.8;
+
+      for (let b = 0; b < NUM_BOLTS; b++) {
+        const angle = (b / NUM_BOLTS) * Math.PI * 2 + seedBase;
+        const elev = Math.sin(seedBase + b) * 0.6;
+        let px = ox, py = oy, pz = oz;
+        for (let k = 0; k < SEGS; k++) {
+          if (v >= MAX_VERTS / 2) break;
+          const tk = (k + 1) / SEGS;
+          const baseX = ox + Math.cos(angle) * reach * tk;
+          const baseY = oy + elev * reach * tk;
+          const baseZ = oz + Math.sin(angle) * reach * tk;
+          const jit = 0.08 * (1 - tk * 0.5);
+          const nx = baseX + (Math.random() - 0.5) * jit;
+          const ny = baseY + (Math.random() - 0.5) * jit;
+          const nz = baseZ + (Math.random() - 0.5) * jit;
+          positions[v * 3] = px; positions[v * 3 + 1] = py; positions[v * 3 + 2] = pz;
+          colors[v * 3] = tmpC.r; colors[v * 3 + 1] = tmpC.g; colors[v * 3 + 2] = tmpC.b;
+          v++;
+          positions[v * 3] = nx; positions[v * 3 + 1] = ny; positions[v * 3 + 2] = nz;
+          colors[v * 3] = tmpC.r; colors[v * 3 + 1] = tmpC.g; colors[v * 3 + 2] = tmpC.b;
+          v++;
+          px = nx; py = ny; pz = nz;
+        }
+      }
+    }
+    geo.setDrawRange(0, v);
+    (geo.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+    (geo.attributes.color as THREE.BufferAttribute).needsUpdate = true;
+  });
+
+  return (
+    <lineSegments geometry={geo} frustumCulled={false}>
+      <lineBasicMaterial vertexColors transparent opacity={1} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </lineSegments>
+  );
+}
+
+// ─── Aura (사람 주위 광역 발광) ──────────────────────
+function AuraSpells() {
+  const innerRef = useRef<THREE.InstancedMesh>(null);
+  const outerRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const tmpC = useMemo(() => new THREE.Color(), []);
+
+  useFrame(() => {
+    let n = 0;
+    const t = performance.now() * 0.001;
+    for (const s of [...queries.spells]) {
+      if (s.spellKind !== 'aura' || !s.spellOrigin) continue;
+      const ph = spellPhase('aura', s.age ?? 0);
+      let intensity = 0;
+      if (ph.phase === 'charge') intensity = ph.t * 0.7;
+      else if (ph.phase === 'release') intensity = 0.7 + Math.sin(t * 2) * 0.3;
+      else intensity = (1 - ph.t) * 0.7;
+      const cr = s.primaryColor ?? [1, 1, 1];
+      const intens = (s.spellIntensity ?? 1) * intensity;
+      tmpC.setRGB(cr[0] * intens, cr[1] * intens, cr[2] * intens);
+
+      if (innerRef.current) {
+        dummy.position.set(s.spellOrigin[0], s.spellOrigin[1], s.spellOrigin[2]);
+        dummy.rotation.set(0, t * 0.5, 0);
+        dummy.scale.setScalar(0.6 + Math.sin(t * 3) * 0.05);
+        dummy.updateMatrix();
+        innerRef.current.setMatrixAt(n, dummy.matrix);
+        innerRef.current.setColorAt(n, tmpC);
+      }
+      if (outerRef.current) {
+        dummy.scale.setScalar(1.3 + Math.sin(t * 2.5 + 1) * 0.1);
+        dummy.updateMatrix();
+        outerRef.current.setMatrixAt(n, dummy.matrix);
+        // 외부는 더 옅게
+        const dimC = new THREE.Color(tmpC.r * 0.4, tmpC.g * 0.4, tmpC.b * 0.4);
+        outerRef.current.setColorAt(n, dimC);
+      }
+      n++;
+    }
+    [innerRef, outerRef].forEach((ref) => {
+      const mesh = ref.current;
+      if (!mesh) return;
+      mesh.count = n;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    });
+  });
+
+  return (
+    <>
+      <instancedMesh ref={innerRef} args={[undefined, undefined, 8]} frustumCulled={false}>
+        <icosahedronGeometry args={[1, 2]} />
+        <BoundMaterial intensity={2.5} />
+      </instancedMesh>
+      <instancedMesh ref={outerRef} args={[undefined, undefined, 8]} frustumCulled={false}>
+        <icosahedronGeometry args={[1, 1]} />
+        <BoundMaterial intensity={1.5} />
+      </instancedMesh>
+    </>
+  );
+}
+
+// ─── Wave (Shockwave 충격파) ──────────────────────
+function WaveSpells() {
+  const ringRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const tmpC = useMemo(() => new THREE.Color(), []);
+
+  useFrame(() => {
+    let n = 0;
+    for (const s of [...queries.spells]) {
+      if (s.spellKind !== 'wave' || !s.spellOrigin) continue;
+      const ph = spellPhase('wave', s.age ?? 0);
+      let radius = 0;
+      let opa = 0;
+      if (ph.phase === 'release') {
+        const ease = 1 - Math.pow(1 - ph.t, 2);
+        radius = ease * 3.5;
+        opa = 1 - ph.t * 0.7;
+      } else if (ph.phase === 'fade') {
+        radius = 3.5 + ph.t * 0.5;
+        opa = (1 - ph.t) * 0.3;
+      }
+      const cr = s.primaryColor ?? [1, 1, 1];
+      const intens = (s.spellIntensity ?? 1) * opa;
+      tmpC.setRGB(cr[0] * intens, cr[1] * intens, cr[2] * intens);
+
+      // 3 ring (시간차)
+      for (let r = 0; r < 3; r++) {
+        if (!ringRef.current || n >= 30) break;
+        const offset = r * 0.3;
+        const localRadius = Math.max(0.05, radius - offset);
+        if (localRadius < 0.1) continue;
+        dummy.position.set(s.spellOrigin[0], s.spellOrigin[1], s.spellOrigin[2]);
+        dummy.rotation.set(Math.PI / 2, 0, 0);
+        dummy.scale.set(localRadius, 0.05, localRadius);
+        dummy.updateMatrix();
+        ringRef.current.setMatrixAt(n, dummy.matrix);
+        ringRef.current.setColorAt(n, tmpC);
+        n++;
+      }
+    }
+    if (ringRef.current) {
+      ringRef.current.count = n;
+      ringRef.current.instanceMatrix.needsUpdate = true;
+      if (ringRef.current.instanceColor) ringRef.current.instanceColor.needsUpdate = true;
+    }
+  });
+
+  return (
+    <instancedMesh ref={ringRef} args={[undefined, undefined, 30]} frustumCulled={false}>
+      <torusGeometry args={[1, 0.04, 8, 48]} />
+      <BoundMaterial intensity={3} />
+    </instancedMesh>
+  );
+}
+
+// ─── Magic Circle (소환진) ──────────────────────
+function MagicCircleSpells() {
+  const outerRef = useRef<THREE.InstancedMesh>(null);
+  const innerRef = useRef<THREE.InstancedMesh>(null);
+  const starRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const tmpC = useMemo(() => new THREE.Color(), []);
+
+  useFrame(() => {
+    let n = 0;
+    const t = performance.now() * 0.001;
+    for (const s of [...queries.spells]) {
+      if (s.spellKind !== 'magicCircle' || !s.spellOrigin) continue;
+      const ph = spellPhase('magicCircle', s.age ?? 0);
+      let opa = 0, scale = 0;
+      if (ph.phase === 'charge') { opa = ph.t; scale = ph.t * 0.6; }
+      else if (ph.phase === 'release') { opa = 1; scale = 0.6 + Math.sin(ph.t * Math.PI) * 0.1; }
+      else { opa = 1 - ph.t; scale = 0.6; }
+      const cr = s.primaryColor ?? [1, 1, 1];
+      const intens = (s.spellIntensity ?? 1) * opa;
+      tmpC.setRGB(cr[0] * intens, cr[1] * intens, cr[2] * intens);
+
+      if (outerRef.current) {
+        dummy.position.set(s.spellOrigin[0], s.spellOrigin[1] - 0.3, s.spellOrigin[2]);
+        dummy.rotation.set(Math.PI / 2, 0, t * 0.6);
+        dummy.scale.setScalar(scale);
+        dummy.updateMatrix();
+        outerRef.current.setMatrixAt(n, dummy.matrix);
+        outerRef.current.setColorAt(n, tmpC);
+      }
+      if (innerRef.current) {
+        dummy.rotation.set(Math.PI / 2, 0, -t * 0.9);
+        dummy.scale.setScalar(scale * 0.7);
+        dummy.updateMatrix();
+        innerRef.current.setMatrixAt(n, dummy.matrix);
+        innerRef.current.setColorAt(n, tmpC);
+      }
+      if (starRef.current) {
+        dummy.position.set(s.spellOrigin[0], s.spellOrigin[1] - 0.25, s.spellOrigin[2]);
+        dummy.rotation.set(0, t * 1.2, 0);
+        dummy.scale.setScalar(scale * 0.45);
+        dummy.updateMatrix();
+        starRef.current.setMatrixAt(n, dummy.matrix);
+        starRef.current.setColorAt(n, tmpC);
+      }
+      n++;
+    }
+    [outerRef, innerRef, starRef].forEach((ref) => {
+      const mesh = ref.current;
+      if (!mesh) return;
+      mesh.count = n;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    });
+  });
+
+  return (
+    <>
+      <instancedMesh ref={outerRef} args={[undefined, undefined, 8]} frustumCulled={false}>
+        <torusGeometry args={[1, 0.05, 8, 48]} />
+        <BoundMaterial intensity={2.5} />
+      </instancedMesh>
+      <instancedMesh ref={innerRef} args={[undefined, undefined, 8]} frustumCulled={false}>
+        <torusGeometry args={[1, 0.04, 8, 36]} />
+        <BoundMaterial intensity={2.5} />
+      </instancedMesh>
+      <instancedMesh ref={starRef} args={[undefined, undefined, 8]} frustumCulled={false}>
+        <octahedronGeometry args={[1, 0]} />
+        <BoundMaterial intensity={3} />
+      </instancedMesh>
+    </>
+  );
 }
 
 // 사용되지 않은 상수 lint 회피 (향후 확장용)

@@ -85,9 +85,9 @@ export default function App() {
     <div style={rootStyle}>
       <Scene />
       <div style={hudStyle}>
-        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.6</span></div>
+        <div style={titleStyle}>🦋 <b>창조의 세계</b> <span style={versionStyle}>v0.7</span></div>
         <div style={hintStyle}>
-          v0.6 Demoscene — Plasma + Voronoi + 4 PostFX 모드<br />
+          v0.7 마법 8종 + Reaction-Diffusion (Turing 1952)<br />
           <span style={{ color: '#66e0ff' }}>FX: {postFxMode}</span>
         </div>
 
@@ -121,12 +121,16 @@ export default function App() {
             👌 핀치 → 무언가 태어남<br />
             ✊ 주먹 → 나무 자라기 (max 3그루)<br />
             😮 입 벌리고 핀치 → 큰 창조물<br />
-            😊 미소 → 따뜻 / 😲 놀람 → 사이버<br /><br />
-            <b>마법 (양손)</b><br />
+            😊 미소 / 😲 놀람 → 색조 변화<br /><br />
+            <b>마법 8종</b><br />
             🤲 양손 펴고 가깝게 → 🌀 Rasengan<br />
             👐 양손 펴고 같은 높이 → 💥 Kamehameha<br />
             ☝️ 한 손 펴고 어깨 위 → ⚡ Bankai<br />
-            👏 박수 → 🔥 Amaterasu + 모드 셔플
+            👏 박수 → 🔥 Amaterasu + 모드 셔플<br />
+            ✊👌 한손 주먹 + 다른손 핀치 → ⚡ Chidori<br />
+            🙌 양손 펴고 양손 어깨 위 → ✨ Aura<br />
+            👐 양손 펴고 멀리 (&gt;0.7) → 💫 Wave<br />
+            👇 한 손 펴고 hip 아래 → 🔮 Magic Circle
           </div>
         )}
 

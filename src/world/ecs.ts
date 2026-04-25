@@ -74,6 +74,8 @@ export interface Entity {
   spellOrigin?: [number, number, number];
   spellTarget?: [number, number, number];
   spellIntensity?: number;
+  /** Aura — 매 프레임 owner의 가슴 위치로 spellOrigin update */
+  spellFollowPersonId?: number;
 }
 
 export const world = new World<Entity>();

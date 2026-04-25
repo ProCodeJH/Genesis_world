@@ -6,7 +6,7 @@
  * 새 SpellKind 추가 후 spellFactory.composeSpell + Spells.tsx 렌더 + spellGestureSystem 트리거.
  */
 
-export type SpellKind = 'sphere' | 'beam' | 'pillar' | 'snap';
+export type SpellKind = 'sphere' | 'beam' | 'pillar' | 'snap' | 'chidori' | 'aura' | 'wave' | 'magicCircle';
 
 export type SpellPhase = 'charge' | 'release' | 'fade';
 
@@ -17,10 +17,14 @@ export interface SpellPhaseTimings {
 }
 
 export const SPELL_TIMINGS: Record<SpellKind, SpellPhaseTimings> = {
-  sphere: { charge: 0.6, release: 1.4, fade: 0.6 },  // 라센건 — 길게 회전
-  beam: { charge: 0.8, release: 1.2, fade: 0.5 },     // 카메하메하 — 충전 길게, 발사 짧게
-  pillar: { charge: 0.3, release: 1.6, fade: 0.6 },   // 반카이 — 즉발 + 길게 유지
-  snap: { charge: 0.1, release: 0.5, fade: 0.7 },     // 아마테라스 — 즉발 폭발
+  sphere: { charge: 0.6, release: 1.4, fade: 0.6 },
+  beam: { charge: 0.8, release: 1.2, fade: 0.5 },
+  pillar: { charge: 0.3, release: 1.6, fade: 0.6 },
+  snap: { charge: 0.1, release: 0.5, fade: 0.7 },
+  chidori: { charge: 0.2, release: 1.0, fade: 0.4 },     // 치도리 — 짧고 강렬한 번개
+  aura: { charge: 0.5, release: 2.5, fade: 0.8 },        // 오라 — 길게 유지
+  wave: { charge: 0.1, release: 1.2, fade: 0.4 },        // 충격파 — 즉발 퍼짐
+  magicCircle: { charge: 0.3, release: 2.0, fade: 0.7 }, // 소환진 — 회전 유지
 };
 
 export const SPELL_LABELS: Record<SpellKind, string> = {
@@ -28,6 +32,10 @@ export const SPELL_LABELS: Record<SpellKind, string> = {
   beam: '💥 Kamehameha',
   pillar: '⚡ Bankai',
   snap: '🔥 Amaterasu',
+  chidori: '⚡ Chidori',
+  aura: '✨ Aura',
+  wave: '💫 Wave',
+  magicCircle: '🔮 Magic Circle',
 };
 
 /** 현재 phase 계산 + 그 phase 안에서의 0..1 진행도 */

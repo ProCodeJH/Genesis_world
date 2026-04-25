@@ -65,5 +65,29 @@ export async function playSpell(kind: SpellKind): Promise<void> {
       lowOsc?.triggerAttackRelease('A1', '8n');
       noise?.triggerAttackRelease('8n');
       break;
+    case 'chidori':
+      // 치도리: 빠른 bell 연타 + 노이즈
+      bell?.triggerAttackRelease('E5', '32n');
+      setTimeout(() => bell?.triggerAttackRelease('G5', '32n'), 80);
+      setTimeout(() => bell?.triggerAttackRelease('B5', '32n'), 160);
+      noise?.triggerAttackRelease('16n');
+      break;
+    case 'aura':
+      // 오라: 부드러운 FM 코드 (단음을 시간차로 쌓아 코드 효과)
+      osc?.triggerAttackRelease('C4', '2n');
+      setTimeout(() => osc?.triggerAttackRelease('E4', '2n'), 60);
+      setTimeout(() => osc?.triggerAttackRelease('G4', '2n'), 120);
+      break;
+    case 'wave':
+      // 충격파: 저음 sub + 짧은 노이즈
+      lowOsc?.triggerAttackRelease('C2', '4n');
+      noise?.triggerAttackRelease('8n');
+      break;
+    case 'magicCircle':
+      // 소환진: bell 코드 (E, A, C#)
+      bell?.triggerAttackRelease('E4', '4n');
+      setTimeout(() => bell?.triggerAttackRelease('A4', '4n'), 100);
+      setTimeout(() => bell?.triggerAttackRelease('C5', '4n'), 200);
+      break;
   }
 }

@@ -9,6 +9,7 @@ import { FlowGlimpse } from './FlowGlimpse';
 import { Spells } from './Spells';
 import { PlasmaSphere } from './PlasmaSphere';
 import { VoronoiBackground } from './VoronoiBackground';
+import { ReactionDiffusionPlane } from './ReactionDiffusionPlane';
 import { PostFX } from './PostFX';
 import { CreationLifecycle } from '../world/systems/creationLifecycleSystem';
 import { LSystemLifecycle } from '../world/systems/lsystemSystem';
@@ -38,6 +39,7 @@ export function Scene() {
       <PlasmaSphere />
       <Trees />
       <FlowGlimpse />
+      <ReactionDiffusionPlane />
       <Spells />
       <CreationLifecycle />
       <LSystemLifecycle />
